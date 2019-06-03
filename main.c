@@ -10,7 +10,7 @@
 
 // MEM
 //static int MEM[MEMSIZE];
-
+// ?
 // funçoes transição
 
 void notNew_to_New(struct Queue *notNew, struct Queue *New, int time)
