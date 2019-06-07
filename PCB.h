@@ -16,7 +16,7 @@
 struct PCB
 {
 
-    int id, pc, n_instructions, state, runtime, block_counter, entry, count;
+    int id, pc, n_instructions, state, runtime, block_counter, entry, count, iniMem, endMem;
     char inst[300];
 };
 

@@ -6,12 +6,175 @@
 
 #define MEMSIZE 300
 #define QUANTUM 4
+#define EMPTY -1
 #define FILE_NAME "input1.txt"
 
+bool next_best = false; //false->next, true->best
+int disk;
+int nextFit = -1;
+
 // MEM
-//static int MEM[MEMSIZE];
-// ?
+static int MEM[MEMSIZE];
 // funçoes transição
+
+void fillMem()
+{
+    for (int i = 0; i < MEMSIZE; i++)
+        MEM[i] = EMPTY;
+}
+
+void setMem(struct PCB *pcb)
+{
+    int a = pcb->iniMem;
+    for (int i = 0; i < 300; i++)
+    {
+        switch (pcb->inst[i])
+        {
+        case '0':
+            MEM[a] = 0;
+            a++;
+            break;
+
+        case '1':
+            if (pcb->inst[i + 1] == ' ')
+            {
+                MEM[a] = 1;
+                a++;
+                break;
+            }
+            else if (pcb->inst[i + 1] == '0')
+            {
+                MEM[a] = 10;
+                a++;
+                break;
+            }
+            else if (pcb->inst[i + 1] == '1')
+            {
+                MEM[a] = 11;
+                a++;
+                break;
+            }
+
+        case '2':
+            MEM[a] = 2;
+            a++;
+            break;
+        case '3':
+            MEM[a] = 3;
+            a++;
+            break;
+
+        case '4':
+            MEM[a] = 4;
+            a++;
+            break;
+
+        case '5':
+            MEM[a] = 5;
+            a++;
+            break;
+
+        case '6':
+            MEM[a] = 6;
+            a++;
+            break;
+
+        case '7':
+            MEM[a] = 7;
+            a++;
+            break;
+
+        case '8':
+            MEM[a] = 8;
+            a++;
+            break;
+
+        case '9':
+            MEM[a] = 9;
+            a++;
+            break;
+
+        default:
+            break;
+        }
+    }
+}
+
+// int[] memSpace()
+// {
+//     int ii = 0;
+//     int a = 0;
+//     int space[MEMSIZE] = \0;
+//     for (int i = 0; i < MEMSIZE; i++)
+//     {
+//         if (MEM[i] == -1)
+//             a++;
+//         else if (a != 0)
+//         {
+//             space[ii] = a;
+//             space[ii++] = i;
+//             ii + ;
+//             a = 0;
+//         }
+//     }
+//     return space;
+// }
+
+void toMem(struct PCB *pcb)
+{
+    int b = 0;
+    int a = 0;
+    int space[MEMSIZE];
+    for (int i = 0; i < MEMSIZE; i++)
+    {
+        if (MEM[i] == -1)
+            a++;
+        else if (a != 0)
+        {
+            space[b] = a;
+            space[b++] = i;
+            b++;
+            a = 0;
+        }
+    }
+
+    if (next_best)
+    {
+        //best
+        int min = 100;
+        int minini;
+        for (int i = 0; i < MEMSIZE; i = i + 2)
+        {
+            if (space[i] > pcb->n_instructions + 10 && space[i] < min)
+            {
+                min = space[i];
+                minini = space[i + 1];
+            }
+        }
+        pcb->iniMem = minini - min;
+        pcb->endMem = pcb->iniMem + pcb->n_instructions + 10;
+        setMem(pcb);
+    }
+    else
+    {
+        //next
+        for (int ii = 0; ii < 2; ii++)
+        {
+            for (int i = 0; i < MEMSIZE; i++)
+            {
+                if (space[i + 1] > nextFit && space[i] > pcb->n_instructions + 10)
+                {
+                    pcb->iniMem = space[i + 1] - space[i];
+                    pcb->endMem = pcb->iniMem + pcb->n_instructions + 10;
+                    setMem(pcb);
+                    nextFit = pcb->endMem;
+                    break;
+                }
+            }
+            nextFit = -1;
+        }
+    }
+}
 
 void notNew_to_New(struct Queue *notNew, struct Queue *New, int time)
 {
@@ -36,6 +199,7 @@ void new_to_wait(struct Queue *New, struct Queue *Wait)
         struct PCB *pcb = dequeue(New);
         pcb->state = WAIT;
         enqueue(Wait, pcb);
+        toMem(pcb);
     }
 }
 
