@@ -23,10 +23,23 @@ void fillMem()
         MEM[i] = EMPTY;
 }
 
+void print_MEM()
+{
+    for (int i = 0; i < MEMSIZE; i++)
+    {
+        printf("%d", MEM[i]);
+    }
+}
+
 void setMem(struct PCB *pcb)
 {
     int a = pcb->iniMem;
-    for (int i = 0; i < 300; i++)
+    for (int i = 0; i < 10; i++)
+    {
+        MEM[a] = 0;
+        a++;
+    }
+    for (int i = 0; i <= pcb->instSize; i++)
     {
         switch (pcb->inst[i])
         {
@@ -46,12 +59,14 @@ void setMem(struct PCB *pcb)
             {
                 MEM[a] = 10;
                 a++;
+                i++;
                 break;
             }
             else if (pcb->inst[i + 1] == '1')
             {
                 MEM[a] = 11;
                 a++;
+                i++;
                 break;
             }
 
@@ -100,79 +115,171 @@ void setMem(struct PCB *pcb)
     }
 }
 
-// int[] memSpace()
-// {
-//     int ii = 0;
-//     int a = 0;
-//     int space[MEMSIZE] = \0;
-//     for (int i = 0; i < MEMSIZE; i++)
-//     {
-//         if (MEM[i] == -1)
-//             a++;
-//         else if (a != 0)
-//         {
-//             space[ii] = a;
-//             space[ii++] = i;
-//             ii + ;
-//             a = 0;
-//         }
-//     }
-//     return space;
-// }
-
-void toMem(struct PCB *pcb)
+bool toMem(struct PCB *pcb)
 {
     int b = 0;
     int a = 0;
     int space[MEMSIZE];
     for (int i = 0; i < MEMSIZE; i++)
     {
-        if (MEM[i] == -1)
+        space[i] = 0;
+    }
+    for (int i = 0; i <= MEMSIZE; i++)
+    {
+        if (MEM[i] == EMPTY)
+        {
             a++;
-        else if (a != 0)
+            //printf("\n %d", a);
+        }
+        else if (a != 0 && MEM[i] != EMPTY)
         {
             space[b] = a;
-            space[b++] = i;
+            space[b + 1] = i;
             b++;
             a = 0;
         }
     }
+    //printf("HEllo, %d, %d\n", space[0], space[1]);
 
     if (next_best)
     {
         //best
-        int min = 100;
+        int min = 400;
         int minini;
         for (int i = 0; i < MEMSIZE; i = i + 2)
         {
-            if (space[i] > pcb->n_instructions + 10 && space[i] < min)
+            if (space[i] > pcb->n_instructions * 3 + 10 && space[i] < min)
             {
                 min = space[i];
+                //printf("min=%d\n",min);
                 minini = space[i + 1];
+                //printf("minini=%d\n",minini);
             }
         }
-        pcb->iniMem = minini - min;
-        pcb->endMem = pcb->iniMem + pcb->n_instructions + 10;
-        setMem(pcb);
+        if (min != 400)
+        {
+            pcb->iniMem = minini - min;
+            //printf("%d\n", pcb->iniMem);
+            pcb->endMem = pcb->iniMem + pcb->n_instructions * 3 + 10;
+            //printf("%d\n", pcb->endMem);
+            setMem(pcb);
+            print_MEM();
+            printf("\n");
+            return true;
+        }
+        printf("\n");
+        return false;
     }
     else
     {
         //next
+        bool done = false;
         for (int ii = 0; ii < 2; ii++)
         {
             for (int i = 0; i < MEMSIZE; i++)
             {
-                if (space[i + 1] > nextFit && space[i] > pcb->n_instructions + 10)
+                if (space[i + 1] > nextFit && space[i] > pcb->n_instructions * 3 + 10)
                 {
                     pcb->iniMem = space[i + 1] - space[i];
-                    pcb->endMem = pcb->iniMem + pcb->n_instructions + 10;
+                    pcb->endMem = pcb->iniMem + pcb->n_instructions * 3 + 10;
                     setMem(pcb);
+                    print_MEM();
                     nextFit = pcb->endMem;
-                    break;
+                    done = true;
+                    //printf("%d", nextFit);
+                    printf("\n");
+                    return true;
                 }
+            }
+            if (done)
+            {
+                break;
             }
             nextFit = -1;
         }
+    }
+    printf("\n");
+    return false;
+}
+
+void set_X(int x1, int x2, struct PCB *pcb)
+{
+    int beg = pcb->iniMem;
+    MEM[beg + x1 - 1] = MEM[beg + x2 - 1];
+}
+
+void set_N(int x, int n, struct PCB *pcb)
+{
+    MEM[pcb->iniMem + x - 1] = n;
+}
+
+void inc_X(int x, struct PCB *pcb)
+{
+    int beg = pcb->iniMem;
+    MEM[beg + x - 1] = MEM[beg + x];
+}
+
+void dec_X(int x, struct PCB *pcb)
+{
+    int beg = pcb->iniMem;
+    if (x != 1)
+        MEM[beg + x - 1] = MEM[beg + x - 2];
+}
+
+void back_N(int n, struct PCB *pcb)
+{
+    if ((pcb->pc -= n) >= 0)
+        pcb->pc -= n;
+    else
+    {
+        exit_X(pcb);
+        printf("MEMORY ACCESS VIOLATION\n");
+    }
+}
+
+void forward_N(int n, struct PCB *pcb)
+{
+    if ((pcb->pc += n) <= count_instructions(pcb->inst))
+        pcb->pc += n;
+    else
+    {
+        exit_X(pcb);
+        printf("MEMORY ACCESS VIOLATION\n");
+    }
+}
+
+void if_X_N(int x, int n, struct PCB *pcb)
+{
+    if (x == 0)
+        forward_N(n, pcb);
+    else
+        forward_N(1, pcb);
+}
+
+void fork_X(int x, struct PCB *pcb)
+{
+    struct PCB *son = pcb;
+    pcb->id = x;
+    bool created = toMem(pcb);
+    if (!created)
+        pcb->id = -1;
+}
+
+void disk_save_X(int x)
+{
+    disk = x;
+}
+
+void disk_load_X(int x, struct PCB *pcb)
+{
+    MEM[pcb->iniMem + x - 1] = disk;
+}
+
+void exit_X(struct PCB *pcb)
+{
+    for (int i = pcb->iniMem; i < pcb->endMem; i++)
+    {
+        MEM[i] = EMPTY;
     }
 }
 
@@ -281,13 +388,12 @@ short exit_pcb(struct Queue *exit, short num)
     return num;
 }
 
-int function(struct Queue *queue)
+int run_core(struct Queue *queue)
 {
-
     if (!isEmpty(queue))
     {
 
-        switch (front(queue)->inst[front(queue)->count])
+        switch (MEM[front(queue)->iniMem + i])
         {
         case '0':
 
@@ -403,6 +509,7 @@ int main()
     struct Queue *Exit = newQueue(5);
     struct Queue *notNew = newQueue(30);
     struct PCB *list[30] = {NULL};
+    fillMem();
 
     FILE *f = fopen("scheduler_simples.out", "w+");
 
@@ -458,7 +565,7 @@ int main()
 
         if (!isEmpty(Run))
         {
-            e = function(Run);
+            e = run_core(Run);
             front(Run)->count += 6;
             front(Run)->n_instructions--;
             front(Run)->pc++;

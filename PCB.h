@@ -16,7 +16,7 @@
 struct PCB
 {
 
-    int id, pc, n_instructions, state, runtime, block_counter, entry, count, iniMem, endMem;
+    int id, pc, n_instructions, state, runtime, block_counter, entry, count, iniMem, endMem, instSize;
     char inst[300];
 };
 
@@ -34,6 +34,17 @@ int count_instructions(char arr[])
     return a / 3;
 }
 
+int string_size(char arr[])
+{
+    int i = 0;
+
+    while (arr[i] != '\0')
+    {
+        i++;
+    }
+    return i;
+}
+
 // Bob o Constructor
 
 struct PCB *newPCB(int id, char array[], int entry)
@@ -48,6 +59,7 @@ struct PCB *newPCB(int id, char array[], int entry)
     strcpy(PCB->inst, array);
     //  um novo process começa sempre a NEW
     PCB->state = NOTNEW;
+    PCB->instSize = string_size(array);
 
     int a = 0;
     char i = array[a];
