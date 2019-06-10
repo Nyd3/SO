@@ -50,7 +50,7 @@ int string_size(char arr[])
 struct PCB *newPCB(int id, char array[], int entry)
 {
     struct PCB *PCB = malloc(sizeof(struct PCB));
-    PCB->count = 1;
+    PCB->count = 0;
     PCB->id = id;
     PCB->pc = 0;
     PCB->runtime = 0;
@@ -67,4 +67,22 @@ struct PCB *newPCB(int id, char array[], int entry)
     PCB->n_instructions = count_instructions(array);
 
     return PCB;
+}
+
+struct PCB *copyPCB(struct PCB *pcb)
+{
+    struct PCB *son = malloc(sizeof(struct PCB));
+
+    son->count = pcb->count;
+    son->id = pcb->id;
+    son->pc = pcb->pc;
+    son->runtime = 0;
+    son->entry = pcb->entry;
+    son->block_counter = pcb->block_counter;
+    strcpy(son->inst, pcb->inst);
+    son->state = WAIT;
+    son->instSize = pcb->instSize;
+    son->n_instructions = pcb->n_instructions - 1;
+
+    return son;
 }

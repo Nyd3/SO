@@ -12,6 +12,7 @@
 bool next_best = false; //false->next, true->best
 int disk;
 int nextFit = -1;
+int listaindex;
 
 // MEM
 static int MEM[MEMSIZE];
@@ -27,7 +28,8 @@ void print_MEM()
 {
     for (int i = 0; i < MEMSIZE; i++)
     {
-        printf("%d", MEM[i]);
+        if (MEM[i] != EMPTY)
+            printf("%d", MEM[i]);
     }
 }
 
@@ -163,7 +165,7 @@ bool toMem(struct PCB *pcb)
             pcb->endMem = pcb->iniMem + pcb->n_instructions * 3 + 10;
             //printf("%d\n", pcb->endMem);
             setMem(pcb);
-            print_MEM();
+            //print_MEM();
             printf("\n");
             return true;
         }
@@ -183,7 +185,7 @@ bool toMem(struct PCB *pcb)
                     pcb->iniMem = space[i + 1] - space[i];
                     pcb->endMem = pcb->iniMem + pcb->n_instructions * 3 + 10;
                     setMem(pcb);
-                    print_MEM();
+                    //print_MEM();
                     nextFit = pcb->endMem;
                     done = true;
                     //printf("%d", nextFit);
@@ -200,6 +202,14 @@ bool toMem(struct PCB *pcb)
     }
     printf("\n");
     return false;
+}
+
+void leave_X(struct PCB *pcb)
+{
+    for (int i = pcb->iniMem; i < pcb->endMem; i++)
+    {
+        MEM[i] = EMPTY;
+    }
 }
 
 void set_X(int x1, int x2, struct PCB *pcb)
@@ -232,7 +242,7 @@ void back_N(int n, struct PCB *pcb)
         pcb->pc -= n;
     else
     {
-        exit_X(pcb);
+        leave_X(pcb);
         printf("MEMORY ACCESS VIOLATION\n");
     }
 }
@@ -243,7 +253,7 @@ void forward_N(int n, struct PCB *pcb)
         pcb->pc += n;
     else
     {
-        exit_X(pcb);
+        leave_X(pcb);
         printf("MEMORY ACCESS VIOLATION\n");
     }
 }
@@ -256,13 +266,17 @@ void if_X_N(int x, int n, struct PCB *pcb)
         forward_N(1, pcb);
 }
 
-void fork_X(int x, struct PCB *pcb)
+void fork_X(int x, struct PCB *pcb, struct Queue *queue, struct PCB *list[])
 {
-    struct PCB *son = pcb;
-    pcb->id = x;
+    struct PCB *son = copyPCB(pcb);
+    son->id = (68 + 1) * x;
     bool created = toMem(pcb);
     if (!created)
         pcb->id = -1;
+    else
+        enqueue(queue, son);
+        list[listaindex] = son;
+        listaindex++;
 }
 
 void disk_save_X(int x)
@@ -275,12 +289,9 @@ void disk_load_X(int x, struct PCB *pcb)
     MEM[pcb->iniMem + x - 1] = disk;
 }
 
-void exit_X(struct PCB *pcb)
+void print_X(int x, struct PCB *pcb)
 {
-    for (int i = pcb->iniMem; i < pcb->endMem; i++)
-    {
-        MEM[i] = EMPTY;
-    }
+    printf("%d\n", MEM[pcb->iniMem + x - 1]);
 }
 
 void notNew_to_New(struct Queue *notNew, struct Queue *New, int time)
@@ -388,67 +399,54 @@ short exit_pcb(struct Queue *exit, short num)
     return num;
 }
 
-int run_core(struct Queue *queue)
+int run_core(struct Queue *queue, struct Queue *wait, struct PCB *list[])
 {
+    int begi = front(queue)->iniMem + front(queue)->count + 10;
+    struct PCB *pcb = front(queue);
+
     if (!isEmpty(queue))
     {
 
-        switch (MEM[front(queue)->iniMem + i])
+        switch (MEM[begi])
         {
-        case '0':
-
-            return 0;
+        case 0:
+            set_X(MEM[begi + 1], MEM[begi + 2], pcb);
             break;
-        case '1':
-            if (front(queue)->inst[front(queue)->count + 1] == ' ')
-            {
-                return 1;
-            }
-            else if (front(queue)->inst[front(queue)->count + 1] == '0')
-            {
-                front(queue)->count++;
-                return 10;
-            }
-            else if (front(queue)->inst[front(queue)->count + 1] == '1')
-            {
-                front(queue)->count++;
-                return 11;
-            }
-
-        case '2':
-
-            return 2;
+        case 1:
+            set_N(MEM[begi + 1], MEM[begi + 2], pcb);
             break;
-        case '3':
-
-            return 3;
+        case 2:
+            inc_X(MEM[begi + 1], pcb);
             break;
-        case '4':
-
-            return 4;
+        case 3:
+            dec_X(MEM[begi + 1], pcb);
             break;
-        case '5':
-
-            return 5;
+        case 4:
+            back_N(MEM[begi + 1], pcb);
             break;
-        case '6':
-
-            return 6;
+        case 5:
+            forward_N(MEM[begi + 1], pcb);
             break;
-        case '7':
-
-            return 7;
+        case 6:
+            if_X_N(MEM[begi + 1], MEM[begi + 2], pcb);
             break;
-        case '8':
-
+        case 7:
+            fork_X(MEM[begi + 1], pcb, wait, list);
+            break;
+        case 8:
             front(queue)->inst[front(queue)->block_counter = 0];
-            return 8;
+            disk_save_X(MEM[begi + 1]);
             break;
-        case '9':
-
-            return 9;
+        case 9:
+            front(queue)->inst[front(queue)->block_counter = 0];
+            disk_load_X(MEM[begi + 1], pcb);
             break;
-
+        case 10:
+            print_X(MEM[begi + 1], pcb);
+            break;
+        case 11:
+            leave_X(pcb);
+            break;
         default:
             break;
         }
@@ -525,19 +523,18 @@ int main()
         i++;
         num++;
     }
+    listaindex = i;
 
     // ciclo
-    int e = 0;
     while (num != 0)
     {
         num = exit_pcb(Exit, num);
 
         if (!isEmpty(Run))
         {
-            if (front(Run)->n_instructions == 0 || e == 11)
+            if (front(Run)->n_instructions == 0)
             {
                 run_to_exit(Run, Exit);
-                e = 0;
             }
         }
         if (!isEmpty(Run))
@@ -565,8 +562,8 @@ int main()
 
         if (!isEmpty(Run))
         {
-            e = run_core(Run);
-            front(Run)->count += 6;
+            run_core(Run, Wait, list);
+            front(Run)->count += 3;
             front(Run)->n_instructions--;
             front(Run)->pc++;
         }
@@ -582,6 +579,8 @@ int main()
         fprintf(f, "%.2d ", c);
         print_state(list, i, f);
         c++;
+        print_MEM();
+        printf("\n");
     }
     fclose(f);
     return 0;
