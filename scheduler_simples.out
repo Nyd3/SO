@@ -1,6 +1,25 @@
 00 |  NEW  
 01 |  WAIT 
-02 |  RUN  |  WAIT 
-03 |  RUN  |  WAIT 
-04 |  EXIT |  RUN  
-05 |       |  EXIT 
+02 |  RUN  
+03 |  RUN  
+04 |  RUN  |  WAIT 
+05 |  RUN  |  WAIT 
+06 |  WAIT |  RUN  
+07 |  WAIT |  RUN  
+08 |  WAIT |  RUN  
+09 |  RUN  |  EXIT 
+10 |  RUN  |       
+11 |  RUN  |       
+12 |  RUN  |       
+13 |  RUN  |       |  WAIT 
+14 |  RUN  |       |  WAIT 
+15 |  RUN  |       |  WAIT 
+16 |  RUN  |       |  WAIT 
+17 |  WAIT |       |  RUN  
+18 |  WAIT |       |  RUN  
+19 |  WAIT |       |  RUN  
+20 |  RUN  |       |  EXIT 
+21 |  RUN  |       |       
+22 |  RUN  |       |       
+23 |  EXIT |       |       
+24 |       |       |       

@@ -73,12 +73,12 @@ struct PCB *copyPCB(struct PCB *pcb)
 {
     struct PCB *son = malloc(sizeof(struct PCB));
 
-    son->count = pcb->count;
+    son->count = pcb->count + 3;
     son->id = pcb->id;
     son->pc = pcb->pc;
     son->runtime = 0;
     son->entry = pcb->entry;
-    son->block_counter = pcb->block_counter;
+    son->block_counter = -1;
     strcpy(son->inst, pcb->inst);
     son->state = WAIT;
     son->instSize = pcb->instSize;
